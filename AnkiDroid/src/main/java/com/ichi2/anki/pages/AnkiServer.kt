@@ -17,6 +17,7 @@
 
 package com.ichi2.anki.pages
 
+import android.content.Context
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
@@ -24,6 +25,7 @@ import java.io.ByteArrayInputStream
 
 open class AnkiServer(
     private val postHandler: PostRequestHandler,
+    context: Context? = null,
     port: Int = 0,
 ) : NanoHTTPD(LOCALHOST, port) {
     fun baseUrl(): String = "http://$LOCALHOST:$listeningPort/"

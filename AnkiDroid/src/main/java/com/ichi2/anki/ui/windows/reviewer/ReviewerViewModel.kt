@@ -125,7 +125,7 @@ class ReviewerViewModel(
     val pageDownFlow = MutableSharedFlow<Unit>()
     val statesMutationEvalFlow = MutableSharedFlow<String>()
 
-    override val server: AnkiServer = AnkiServer(this, repository.getServerPort()).also { it.start() }
+    override val server: AnkiServer = AnkiServer(this, null, repository.getServerPort()).also { it.start() }
     private val stateMutationKey = repository.generateStateMutationKey()
     private val stateMutationJs: Deferred<String> = asyncIO { repository.getCustomSchedulingJs() }
     private var typedAnswer = ""

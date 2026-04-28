@@ -52,6 +52,7 @@ import android.webkit.CookieManager
 import android.webkit.JsResult
 import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -563,7 +564,7 @@ abstract class AbstractFlashcardViewer :
         setContentView(getContentViewAttr(fullscreenMode))
 
         val port = StudyScreenRepository().getServerPort()
-        server = AnkiServer(this, port).also { it.start() }
+        server = AnkiServer(this, this, port).also { it.start() }
         // Make ACTION_PROCESS_TEXT for in-app searching possible on > Android 4.0
         delegate.isHandleNativeActionModesEnabled = true
 
