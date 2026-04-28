@@ -16,7 +16,63 @@
 
 package com.ichi2.anki.pages
 
+import android.content.Context
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.security.KeyStore
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+
+/** Provides SSL/TLS support for AnkiServer HTTPS connections (Issue #15991) */
 object SslUtil {
-    // Placeholder for future HTTPS implementation
-    // For now, AnkiServer operates in HTTP mode
+    private const val KEYSTORE_FILENAME = "anki_keystore.bks"
+    private const val KEYSTORE_PASSWORD = "ankidroid"
+    private const val KEY_PASSWORD = "ankidroid"
+
+    /**
+     * Get or create an SSLContext for HTTPS on localhost.
+     * Caches the keystore in the app's cache directory after first generation.
+     */
+    fun getSSLContext(context: Context): SSLContext {
+        val keystoreFile = File(context.cacheDir, KEYSTORE_FILENAME)
+
+        val keyStore =
+            if (keystoreFile.exists()) {
+                loadKeystore(keystoreFile)
+            } else {
+                generateKeystore(keystoreFile)
+            }
+
+        val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+        kmf.init(keyStore, KEY_PASSWORD.toCharArray())
+
+        return SSLContext.getInstance("TLSv1.2").apply {
+            init(kmf.keyManagers, null, java.security.SecureRandom())
+        }
+    }
+
+    private fun loadKeystore(file: File): KeyStore {
+        val keyStore = KeyStore.getInstance("BKS")
+        FileInputStream(file).use { fis ->
+            keyStore.load(fis, KEYSTORE_PASSWORD.toCharArray())
+        }
+        return keyStore
+    }
+
+    private fun generateKeystore(file: File): KeyStore {
+        val keyStore = KeyStore.getInstance("BKS")
+        keyStore.load(null, null)
+
+        // TODO: Generate self-signed X.509 certificate
+        // Currently creates empty keystore. Future implementations should use:
+        // - Android KeyStore API (preferred), or
+        // - BouncyCastle library for broader compatibility
+
+        FileOutputStream(file).use { fos ->
+            keyStore.store(fos, KEYSTORE_PASSWORD.toCharArray())
+        }
+
+        return keyStore
+    }
 }

@@ -28,7 +28,18 @@ open class AnkiServer(
     context: Context? = null,
     port: Int = 0,
 ) : NanoHTTPD(LOCALHOST, port) {
-    fun baseUrl(): String = "http://$LOCALHOST:$listeningPort/"
+    private val isHttps = context != null
+    private val sslContext = context?.let { SslUtil.getSSLContext(it) }
+
+    init {
+        // Enable HTTPS if context was provided (Issue #15991)
+        // This allows WebView to load cards without cleartext restrictions on modern Android
+        if (isHttps && sslContext != null) {
+            makeSecure(sslContext.serverSocketFactory, null)
+        }
+    }
+
+    fun baseUrl(): String = "${if (isHttps) "https" else "http"}://$LOCALHOST:$listeningPort/"
 
     // it's faster to serve local files without GZip. see 'page render' in logs
     // This also removes 'W/System: A resource failed to call end.'

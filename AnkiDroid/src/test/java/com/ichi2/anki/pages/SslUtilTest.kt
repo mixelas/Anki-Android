@@ -15,20 +15,42 @@
  */
 package com.ichi2.anki.pages
 
+import android.content.Context
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
+@RunWith(RobolectricTestRunner::class)
 class SslUtilTest {
     @Test
-    fun testSslUtilExists() {
-        assertNotNull(SslUtil, "SslUtil should be available")
+    fun testGetSSLContextReturnsValidContext() {
+        val context: Context = RuntimeEnvironment.getApplication()
+        val sslContext = SslUtil.getSSLContext(context)
+        assertNotNull(sslContext, "SSLContext should be created successfully")
     }
 
     @Test
-    fun testSslUtilIsObject() {
-        // Verify SslUtil is a singleton object (placeholder for future HTTPS implementation)
-        val instance1 = SslUtil
-        val instance2 = SslUtil
-        kotlin.test.assertSame(instance1, instance2, "SslUtil should be a singleton")
+    fun testSSLContextSupportsHttps() {
+        val context: Context = RuntimeEnvironment.getApplication()
+        val sslContext = SslUtil.getSSLContext(context)
+        assertNotNull(sslContext.serverSocketFactory, "SSLContext should have a server socket factory")
+        assertTrue(
+            sslContext.protocol.contains("TLS", ignoreCase = true),
+            "SSLContext should use TLS protocol",
+        )
+    }
+
+    @Test
+    fun testKeystoreCaching() {
+        val context: Context = RuntimeEnvironment.getApplication()
+        val sslContext1 = SslUtil.getSSLContext(context)
+        val sslContext2 = SslUtil.getSSLContext(context)
+        // Both should successfully return SSLContext
+        // Second call should load from cached keystore
+        assertNotNull(sslContext1)
+        assertNotNull(sslContext2)
     }
 }

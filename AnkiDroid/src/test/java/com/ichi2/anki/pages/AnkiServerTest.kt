@@ -15,10 +15,14 @@
  */
 package com.ichi2.anki.pages
 
+import android.content.Context
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import kotlin.test.assertTrue
 
 @RunWith(MockitoJUnitRunner::class)
@@ -26,10 +30,25 @@ class AnkiServerTest {
     @Mock
     private lateinit var mockPostHandler: PostRequestHandler
 
+    @Before
+    fun setUp() {
+        // Mockito initializes @Mock fields when using MockitoJUnitRunner
+    }
+
     @Test
-    fun testBaseUrlReturnsHttpProtocol() {
+    fun testBaseUrlHttpWhenNoContext() {
+        // Without context, server should use HTTP
         val server = AnkiServer(mockPostHandler, port = 0)
-        assertTrue(server.baseUrl().startsWith("http://"), "Should return HTTP URL")
+        assertTrue(server.baseUrl().startsWith("http://"), "Should return HTTP URL when no context provided")
+        assertTrue(!server.baseUrl().startsWith("https://"), "Should not be HTTPS when context is null")
+    }
+
+    @Test
+    fun testBaseUrlHttpsWhenContextProvided() {
+        // With context, server should use HTTPS
+        val context: Context = RuntimeEnvironment.getApplication()
+        val server = AnkiServer(mockPostHandler, context, port = 0)
+        assertTrue(server.baseUrl().startsWith("https://"), "Should return HTTPS URL when context is provided")
     }
 
     @Test
@@ -39,11 +58,11 @@ class AnkiServerTest {
     }
 
     @Test
-    fun testAnkiServerAcceptsContextParameter() {
-        // Verify that AnkiServer accepts optional context parameter for future HTTPS support
-        val server1 = AnkiServer(mockPostHandler, port = 0)
-        val server2 = AnkiServer(mockPostHandler, null, port = 0)
-        assertTrue(server1.baseUrl().startsWith("http://"))
-        assertTrue(server2.baseUrl().startsWith("http://"))
+    fun testHttpsServerWithPort() {
+        val context: Context = RuntimeEnvironment.getApplication()
+        val server = AnkiServer(mockPostHandler, context, port = 0)
+        val baseUrl = server.baseUrl()
+        assertTrue(baseUrl.startsWith("https://127.0.0.1:"), "Should construct valid HTTPS URL with port")
+        assertTrue(baseUrl.endsWith("/"), "Base URL should end with /")
     }
 }
