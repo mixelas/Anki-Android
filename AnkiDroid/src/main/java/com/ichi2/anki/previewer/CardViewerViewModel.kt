@@ -15,10 +15,11 @@
  */
 package com.ichi2.anki.previewer
 
+import android.app.Application
 import androidx.annotation.CallSuper
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.OnErrorListener
@@ -39,8 +40,9 @@ import kotlinx.serialization.json.Json
 import timber.log.Timber
 
 abstract class CardViewerViewModel(
+    app: Application,
     val savedStateHandle: SavedStateHandle,
-) : ViewModel(),
+) : AndroidViewModel(app),
     OnErrorListener,
     PostRequestHandler {
     override val onError = MutableSharedFlow<String>()

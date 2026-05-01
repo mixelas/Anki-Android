@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.previewer
 
+import android.app.Application
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.SavedStateHandle
 import anki.collection.OpChanges
@@ -43,8 +44,9 @@ import kotlinx.coroutines.flow.update
 import timber.log.Timber
 
 class PreviewerViewModel(
+    app: Application,
     savedStateHandle: SavedStateHandle,
-) : CardViewerViewModel(savedStateHandle),
+) : CardViewerViewModel(app, savedStateHandle),
     ChangeManager.Subscriber {
     val currentIndex =
         savedStateHandle.getMutableStateFlow(
