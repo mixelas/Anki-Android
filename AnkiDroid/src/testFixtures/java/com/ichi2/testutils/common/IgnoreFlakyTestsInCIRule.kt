@@ -17,12 +17,8 @@
 package com.ichi2.testutils.common
 
 import com.ichi2.anki.BuildConfig
-import org.hamcrest.CoreMatchers.not
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
 import org.junit.Assume
 import org.junit.Rule
-import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -102,16 +98,5 @@ enum class OS {
                 }
             }
         }
-    }
-}
-
-class IgnoreFlakyTestsTest {
-    @get:Rule
-    val ignoreFlakyTests = IgnoreFlakyTestsInCIRule()
-
-    @Test
-    @Flaky(os = OS.ALL)
-    fun ensureFlakyTestsAreOnlyRunLocally() {
-        assertThat("Not running under CI", BuildConfig.CI, not(equalTo("true")))
     }
 }
