@@ -82,7 +82,7 @@ class PreviewerViewModelTest : JvmTest() {
                 set(PreviewerFragment.CARD_IDS_FILE_ARG, idsFile)
             }
 
-        viewModel = spyk(PreviewerViewModel(RuntimeEnvironment.getApplication(), savedStateHandle))
+        viewModel = spyk(PreviewerViewModel(RuntimeEnvironment.getApplication().cacheDir, savedStateHandle))
         // the default implementation requires the Collection media directory,
         // which needs Robolectric with CollectionStorageMode.IN_MEMORY_WITH_MEDIA or ON_DISK
         coEvery { viewModel.prepareCardTextForDisplay(any()) } answers { firstArg() }

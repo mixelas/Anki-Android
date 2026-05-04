@@ -17,19 +17,19 @@
 
 package com.ichi2.anki.pages
 
-import android.content.Context
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.ByteArrayInputStream
+import java.io.File
 
 open class AnkiServer(
     private val postHandler: PostRequestHandler,
-    context: Context? = null,
+    cacheDir: File? = null,
     port: Int = 0,
 ) : NanoHTTPD(LOCALHOST, port) {
-    private val isHttps = context != null
-    private val sslContext = context?.let { SslUtil.getSSLContext(it) }
+    private val isHttps = cacheDir != null
+    private val sslContext = cacheDir?.let { SslUtil.getSSLContext(it) }
 
     init {
         // Enable HTTPS if context was provided (Issue #15991)

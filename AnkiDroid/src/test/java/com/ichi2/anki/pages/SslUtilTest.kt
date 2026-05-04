@@ -28,14 +28,14 @@ class SslUtilTest {
     @Test
     fun testGetSSLContextReturnsValidContext() {
         val context: Context = RuntimeEnvironment.getApplication()
-        val sslContext = SslUtil.getSSLContext(context)
+        val sslContext = SslUtil.getSSLContext(context.cacheDir)
         assertNotNull(sslContext, "SSLContext should be created successfully")
     }
 
     @Test
     fun testSSLContextSupportsHttps() {
         val context: Context = RuntimeEnvironment.getApplication()
-        val sslContext = SslUtil.getSSLContext(context)
+        val sslContext = SslUtil.getSSLContext(context.cacheDir)
         assertNotNull(sslContext.serverSocketFactory, "SSLContext should have a server socket factory")
         assertTrue(
             sslContext.protocol.contains("TLS", ignoreCase = true),
@@ -46,8 +46,8 @@ class SslUtilTest {
     @Test
     fun testKeystoreCaching() {
         val context: Context = RuntimeEnvironment.getApplication()
-        val sslContext1 = SslUtil.getSSLContext(context)
-        val sslContext2 = SslUtil.getSSLContext(context)
+        val sslContext1 = SslUtil.getSSLContext(context.cacheDir)
+        val sslContext2 = SslUtil.getSSLContext(context.cacheDir)
         // Both should successfully return SSLContext
         // Second call should load from cached keystore
         assertNotNull(sslContext1)

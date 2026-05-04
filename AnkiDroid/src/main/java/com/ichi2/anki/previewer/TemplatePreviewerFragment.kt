@@ -33,7 +33,7 @@ import timber.log.Timber
 class TemplatePreviewerFragment :
     CardViewerFragment(R.layout.fragment_template_previewer),
     BaseSnackbarBuilderProvider {
-    override val viewModel: TemplatePreviewerViewModel by viewModels()
+    override val viewModel: TemplatePreviewerViewModel by viewModels { templatePreviewerViewModelFactory(requireContext().cacheDir) }
 
     lateinit var binding: FragmentTemplatePreviewerBinding
 

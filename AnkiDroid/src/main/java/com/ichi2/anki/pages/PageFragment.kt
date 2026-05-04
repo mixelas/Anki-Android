@@ -100,7 +100,7 @@ abstract class PageFragment(
         view: View,
         savedInstanceState: Bundle?,
     ) {
-        server = AnkiServer(this).also { it.start() }
+        server = AnkiServer(this, requireContext().cacheDir).also { it.start() }
         webViewLayout = view.findViewById(R.id.webview_layout)
 
         view.findViewById<MaterialToolbar>(R.id.toolbar)?.setNavigationOnClickListener {

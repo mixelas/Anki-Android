@@ -16,7 +16,6 @@
 
 package com.ichi2.anki.pages
 
-import android.content.Context
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
@@ -45,8 +44,8 @@ object SslUtil {
      * Get or create an SSLContext for HTTPS on localhost.
      * Caches the keystore in the app's cache directory after first generation.
      */
-    fun getSSLContext(context: Context): SSLContext {
-        val keystoreFile = File(context.cacheDir, KEYSTORE_FILENAME)
+    fun getSSLContext(cacheDir: File): SSLContext {
+        val keystoreFile = File(cacheDir, KEYSTORE_FILENAME)
 
         val keyStore =
             if (keystoreFile.exists()) {

@@ -112,7 +112,7 @@ class ReviewerFragment :
     DispatchKeyEventListener,
     TagsDialogListener,
     ShakeDetector.Listener {
-    override val viewModel: ReviewerViewModel by viewModels()
+    override val viewModel: ReviewerViewModel by viewModels { reviewerViewModelFactory(requireContext().cacheDir) }
     private val binding by viewBinding(FragmentReviewerBinding::bind)
 
     override val webViewLayout: SafeWebViewLayout get() = binding.webViewLayout

@@ -39,7 +39,7 @@ class TemplatePreviewerViewModelTest : JvmTest() {
 
     private fun createViewModel(arguments: TemplatePreviewerArguments): TemplatePreviewerViewModel {
         val savedStateHandle = SavedStateHandle(mapOf(TemplatePreviewerFragment.ARGS_KEY to arguments))
-        val viewModel = TemplatePreviewerViewModel(RuntimeEnvironment.getApplication(), savedStateHandle)
+        val viewModel = TemplatePreviewerViewModel(RuntimeEnvironment.getApplication().cacheDir, savedStateHandle)
         return spyk(viewModel).apply {
             // the default implementation requires the Collection media directory,
             // which needs a Robolectric setup with CollectionStorageMode.IN_MEMORY_WITH_MEDIA or ON_DISK

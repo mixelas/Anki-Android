@@ -15,7 +15,6 @@
  */
 package com.ichi2.anki.previewer
 
-import android.app.Application
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.SavedStateHandle
 import anki.collection.OpChanges
@@ -42,11 +41,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
+import java.io.File
 
 class PreviewerViewModel(
-    app: Application,
+    cacheDir: File,
     savedStateHandle: SavedStateHandle,
-) : CardViewerViewModel(app, savedStateHandle),
+) : CardViewerViewModel(cacheDir, savedStateHandle),
     ChangeManager.Subscriber {
     val currentIndex =
         savedStateHandle.getMutableStateFlow(
@@ -75,7 +75,7 @@ class PreviewerViewModel(
         asyncIO {
             withCol { getCard(selectedCardIds[savedStateHandle.require(PreviewerFragment.CURRENT_INDEX_ARG)]) }
         }
-    override val server = AnkiServer(this).also { it.start() }
+    override val server = AnkiServer(this, cacheDir).also { it.start() }
 
     init {
         ChangeManager.subscribe(this)

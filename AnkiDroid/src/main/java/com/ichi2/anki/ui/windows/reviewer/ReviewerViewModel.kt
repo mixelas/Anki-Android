@@ -15,7 +15,6 @@
  */
 package com.ichi2.anki.ui.windows.reviewer
 
-import android.app.Application
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import anki.collection.OpChanges
@@ -83,11 +82,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import org.intellij.lang.annotations.Language
 import timber.log.Timber
+import java.io.File
 
 class ReviewerViewModel(
-    app: Application,
+    cacheDir: File,
     savedStateHandle: SavedStateHandle,
-) : CardViewerViewModel(app, savedStateHandle),
+) : CardViewerViewModel(cacheDir, savedStateHandle),
     ChangeManager.Subscriber,
     BindingProcessor<ReviewerBinding, ViewerAction>,
     AutoAdvance.ActionListener {
@@ -127,7 +127,7 @@ class ReviewerViewModel(
     val pageDownFlow = MutableSharedFlow<Unit>()
     val statesMutationEvalFlow = MutableSharedFlow<String>()
 
-    override val server: AnkiServer = AnkiServer(this, app, repository.getServerPort()).also { it.start() }
+    override val server: AnkiServer = AnkiServer(this, cacheDir, repository.getServerPort()).also { it.start() }
     private val stateMutationKey = repository.generateStateMutationKey()
     private val stateMutationJs: Deferred<String> = asyncIO { repository.getCustomSchedulingJs() }
     private var typedAnswer = ""
