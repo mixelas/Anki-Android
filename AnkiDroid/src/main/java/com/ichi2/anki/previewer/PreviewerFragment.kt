@@ -29,8 +29,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.google.android.material.slider.Slider
 import com.ichi2.anki.DispatchKeyEventListener
 import com.ichi2.anki.Flag
@@ -59,7 +62,13 @@ class PreviewerFragment :
     BaseSnackbarBuilderProvider,
     DispatchKeyEventListener,
     BindingProcessor<MappableBinding, PreviewerAction> {
-    override val viewModel: PreviewerViewModel by viewModels { previewerViewModelFactory(requireContext().cacheDir) }
+    override val viewModel: PreviewerViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                PreviewerViewModel(requireContext().cacheDir, createSavedStateHandle())
+            }
+        }
+    }
     private val binding by viewBinding(FragmentPreviewerBinding::bind)
     override val webViewLayout: SafeWebViewLayout get() = binding.webViewLayout
 

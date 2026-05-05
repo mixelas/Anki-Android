@@ -19,7 +19,10 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ichi2.anki.R
 import com.ichi2.anki.databinding.FragmentTemplatePreviewerBinding
 import com.ichi2.anki.libanki.CardOrdinal
@@ -33,7 +36,13 @@ import timber.log.Timber
 class TemplatePreviewerFragment :
     CardViewerFragment(R.layout.fragment_template_previewer),
     BaseSnackbarBuilderProvider {
-    override val viewModel: TemplatePreviewerViewModel by viewModels { templatePreviewerViewModelFactory(requireContext().cacheDir) }
+    override val viewModel: TemplatePreviewerViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                TemplatePreviewerViewModel(requireContext().cacheDir, createSavedStateHandle())
+            }
+        }
+    }
 
     lateinit var binding: FragmentTemplatePreviewerBinding
 

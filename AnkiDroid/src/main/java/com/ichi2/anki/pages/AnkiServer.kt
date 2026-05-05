@@ -28,18 +28,20 @@ open class AnkiServer(
     cacheDir: File? = null,
     port: Int = 0,
 ) : NanoHTTPD(LOCALHOST, port) {
-    private val isHttps = cacheDir != null
-    private val sslContext = cacheDir?.let { SslUtil.getSSLContext(it) }
+    private val sslContext =
+        cacheDir?.let { cacheDir ->
+            runCatching { SslUtil.getSSLContext(cacheDir) }
+                .onFailure { Timber.w(it, "Failed to initialize HTTPS for AnkiServer") }
+                .getOrNull()
+        }
 
     init {
-        // Enable HTTPS if context was provided (Issue #15991)
-        // This allows WebView to load cards without cleartext restrictions on modern Android
-        if (isHttps && sslContext != null) {
-            makeSecure(sslContext.serverSocketFactory, null)
-        }
+        // Enable HTTPS when a keystore was created successfully (Issue #15991)
+        // This allows WebView to load cards without cleartext restrictions on modern Android.
+        sslContext?.let { makeSecure(it.serverSocketFactory, null) }
     }
 
-    fun baseUrl(): String = "${if (isHttps) "https" else "http"}://$LOCALHOST:$listeningPort/"
+    fun baseUrl(): String = "${if (sslContext != null) "https" else "http"}://$LOCALHOST:$listeningPort/"
 
     // it's faster to serve local files without GZip. see 'page render' in logs
     // This also removes 'W/System: A resource failed to call end.'
