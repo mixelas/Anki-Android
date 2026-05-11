@@ -21,9 +21,11 @@ import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.DialogHandler
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
+import com.ichi2.utils.ImportUtils
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
 import timber.log.Timber
@@ -54,8 +56,17 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_dialog_message_add, displayFileName))
                     .positiveButton(R.string.import_message_add) {
-                        (activity as ImportDialogListener).importAdd(packagePath)
-                        activity?.dismissAllDialogFragments()
+                        // Try to handle directly for backward compatibility with activities that implement ImportDialogListener
+                        val a = activity
+                        if (a is ImportDialogListener) {
+                            a.importAdd(packagePath)
+                            a.dismissAllDialogFragments()
+                        } else {
+                            // If activity doesn't implement the interface, store a persistent message
+                            // so the DeckPicker can replay it via DialogHandler
+                            DialogHandler.storeMessage(ImportUtils.CollectionImportAdd(packagePath).toMessage())
+                            activity?.dismissAllDialogFragments()
+                        }
                     }.negativeButton(R.string.dialog_cancel)
                     .create()
             }
@@ -64,8 +75,17 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_message_replace_confirm, displayFileName))
                     .positiveButton(R.string.dialog_positive_replace) {
-                        (activity as ImportDialogListener).importReplace(packagePath)
-                        activity?.dismissAllDialogFragments()
+                        // Try to handle directly for backward compatibility with activities that implement ImportDialogListener
+                        val a = activity
+                        if (a is ImportDialogListener) {
+                            a.importReplace(packagePath)
+                            a.dismissAllDialogFragments()
+                        } else {
+                            // If activity doesn't implement the interface, store a persistent message
+                            // so the DeckPicker can replay it via DialogHandler
+                            DialogHandler.storeMessage(ImportUtils.CollectionImportReplace(packagePath).toMessage())
+                            activity?.dismissAllDialogFragments()
+                        }
                     }.negativeButton(R.string.dialog_cancel)
                     .create()
             }
