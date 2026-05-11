@@ -29,6 +29,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.AnkiDroidApp
+import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.coroutines.applicationScope
@@ -512,8 +513,13 @@ object ImportUtils {
             analyticName = "ImportReplaceDialog",
         ) {
         override fun handleAsyncMessage(activity: AnkiActivity) {
-            // Handle import of collection package APKG
-            activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM, importPath)
+            // Only DeckPicker should show import confirmation dialogs.
+            // If another activity is resumed, keep this message queued until DeckPicker resumes.
+            if (activity is DeckPicker) {
+                activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM, importPath)
+            } else {
+                DialogHandler.storeMessage(toMessage())
+            }
         }
 
         override fun toMessage(): Message =
@@ -535,8 +541,13 @@ object ImportUtils {
             "ImportAddDialog",
         ) {
         override fun handleAsyncMessage(activity: AnkiActivity) {
-            // Handle import of deck package APKG
-            activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM, importPath)
+            // Only DeckPicker should show import confirmation dialogs.
+            // If another activity is resumed, keep this message queued until DeckPicker resumes.
+            if (activity is DeckPicker) {
+                activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM, importPath)
+            } else {
+                DialogHandler.storeMessage(toMessage())
+            }
         }
 
         override fun toMessage(): Message =
