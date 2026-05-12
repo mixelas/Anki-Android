@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2026 Georgios Michelakis <michelakisgio@gmail.com
+ *  Copyright (c) 2026 Georgios Michelakis <michelakisgio@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free Software
@@ -17,23 +17,27 @@
 package com.ichi2.anki.dialogs
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import timber.log.Timber
 
 class ImportViewModel : ViewModel() {
-    private val _importAddFlow = MutableSharedFlow<String>()
-    val importAddFlow = _importAddFlow.asSharedFlow()
+    private val pendingImportRequestState = MutableStateFlow<ImportRequest?>(null)
 
-    private val _importReplaceFlow = MutableSharedFlow<String>()
-    val importReplaceFlow = _importReplaceFlow.asSharedFlow()
+    val pendingImportRequest: StateFlow<ImportRequest?> = pendingImportRequestState
 
-    fun triggerImportAdd(path: String) {
-        viewModelScope.launch { _importAddFlow.emit(path) }
+    fun registerImportRequest(request: ImportRequest) {
+        Timber.d("Import dialog requested: %s", request.dialogType)
+        pendingImportRequestState.value = request
     }
 
-    fun triggerImportReplace(path: String) {
-        viewModelScope.launch { _importReplaceFlow.emit(path) }
+    fun clearImportRequest() {
+        Timber.d("Clearing pending import dialog request")
+        pendingImportRequestState.value = null
     }
+
+    data class ImportRequest(
+        val dialogType: ImportDialog.Type,
+        val importPath: String,
+    )
 }

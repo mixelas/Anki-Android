@@ -22,14 +22,12 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Message
 import android.provider.OpenableColumns
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
-import com.ichi2.anki.AnkiActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModelProvider
 import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.coroutines.applicationScope
@@ -37,12 +35,10 @@ import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.common.exception.ManuallyReportedException
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.compat.CompatHelper
-import com.ichi2.anki.dialogs.DialogHandler
-import com.ichi2.anki.dialogs.DialogHandlerMessage
 import com.ichi2.anki.dialogs.ImportDialog
+import com.ichi2.anki.dialogs.ImportViewModel
 import com.ichi2.anki.onSelectedCsvForImport
 import com.ichi2.anki.servicelayer.DebugInfoService
-import com.ichi2.anki.showImportDialog
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.Contract
 import timber.log.Timber
@@ -247,7 +243,7 @@ object ImportUtils {
                     exception = details.userFacingException,
                 )
             }
-            sendShowImportFileDialogMsg(tempOutDir)
+            sendShowImportFileDialogMsg(context, tempOutDir)
             return ImportResult.Success
         }
 
@@ -467,21 +463,33 @@ object ImportUtils {
             }
 
             /**
-             * Send a Message to AnkiDroidApp so that the DialogMessageHandler shows the Import apkg dialog.
+             * Register a pending import dialog request so an active activity can show it when resumed.
+             *
+             * @param context context used to resolve the owning [ImportViewModel]
              * @param importPath path of to apkg file which will be imported
              */
-            private fun sendShowImportFileDialogMsg(importPath: String) {
+            private fun sendShowImportFileDialogMsg(
+                context: Context,
+                importPath: String,
+            ) {
                 // Get the filename from the path
                 val filename = File(importPath).name
 
-                val dialogMessage =
+                val dialogType =
                     if (isCollectionPackage(filename)) {
-                        CollectionImportReplace(importPath)
+                        ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
                     } else {
-                        CollectionImportAdd(importPath)
+                        ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
                     }
-                // Store the message in AnkiDroidApp message holder, which is loaded later in AnkiActivity.onResume
-                DialogHandler.storeMessage(dialogMessage.toMessage())
+                (context as? FragmentActivity)?.let { activity ->
+                    val importViewModel = ViewModelProvider(activity)[ImportViewModel::class.java]
+                    importViewModel.registerImportRequest(
+                        ImportViewModel.ImportRequest(
+                            dialogType = dialogType,
+                            importPath = importPath,
+                        ),
+                    )
+                }
             }
 
             @SuppressLint("LocaleRootUsage")
@@ -502,62 +510,6 @@ object ImportUtils {
                 // COULD_BE_BETTE: accepts .apkgaa"
                 return extensionSegment.lowercase(Locale.ROOT).startsWith(extension!!)
             }
-        }
-    }
-
-    /** Show confirmation dialog asking to confirm import with replace when file called "collection.apkg" */
-    class CollectionImportReplace(
-        private val importPath: String,
-    ) : DialogHandlerMessage(
-            which = WhichDialogHandler.MSG_SHOW_COLLECTION_IMPORT_REPLACE_DIALOG,
-            analyticName = "ImportReplaceDialog",
-        ) {
-        override fun handleAsyncMessage(activity: AnkiActivity) {
-            // Only DeckPicker should show import confirmation dialogs.
-            // If another activity is resumed, keep this message queued until DeckPicker resumes.
-            if (activity is DeckPicker) {
-                activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM, importPath)
-            } else {
-                DialogHandler.storeMessage(toMessage())
-            }
-        }
-
-        override fun toMessage(): Message =
-            Message.obtain().apply {
-                data = bundleOf("importPath" to importPath)
-                what = this@CollectionImportReplace.what
-            }
-
-        companion object {
-            fun fromMessage(message: Message): CollectionImportReplace = CollectionImportReplace(message.data.getString("importPath")!!)
-        }
-    }
-
-    /** Show confirmation dialog asking to confirm import with add */
-    class CollectionImportAdd(
-        private val importPath: String,
-    ) : DialogHandlerMessage(
-            WhichDialogHandler.MSG_SHOW_COLLECTION_IMPORT_ADD_DIALOG,
-            "ImportAddDialog",
-        ) {
-        override fun handleAsyncMessage(activity: AnkiActivity) {
-            // Only DeckPicker should show import confirmation dialogs.
-            // If another activity is resumed, keep this message queued until DeckPicker resumes.
-            if (activity is DeckPicker) {
-                activity.showImportDialog(ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM, importPath)
-            } else {
-                DialogHandler.storeMessage(toMessage())
-            }
-        }
-
-        override fun toMessage(): Message =
-            Message.obtain().apply {
-                data = bundleOf("importPath" to importPath)
-                what = this@CollectionImportAdd.what
-            }
-
-        companion object {
-            fun fromMessage(message: Message): CollectionImportAdd = CollectionImportAdd(message.data.getString("importPath")!!)
         }
     }
 }

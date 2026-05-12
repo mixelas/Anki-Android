@@ -29,7 +29,6 @@ import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.dialogs.DialogHandler.Companion.storeMessage
 import com.ichi2.anki.showError
 import com.ichi2.utils.HandlerUtils.getDefaultLooper
-import com.ichi2.utils.ImportUtils
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -119,8 +118,6 @@ abstract class DialogHandlerMessage protected constructor(
         fun fromMessage(message: Message): DialogHandlerMessage =
             when (WhichDialogHandler.fromInt(message.what)) {
                 WhichDialogHandler.MSG_SHOW_COLLECTION_LOADING_ERROR_DIALOG -> CollectionLoadingErrorDialog()
-                WhichDialogHandler.MSG_SHOW_COLLECTION_IMPORT_REPLACE_DIALOG -> ImportUtils.CollectionImportReplace.fromMessage(message)
-                WhichDialogHandler.MSG_SHOW_COLLECTION_IMPORT_ADD_DIALOG -> ImportUtils.CollectionImportAdd.fromMessage(message)
                 WhichDialogHandler.MSG_SHOW_SYNC_ERROR_DIALOG -> SyncErrorDialog.SyncErrorDialogMessageHandler.fromMessage(message)
                 WhichDialogHandler.MSG_SHOW_DATABASE_ERROR_DIALOG -> DatabaseErrorDialog.ShowDatabaseErrorDialog.fromMessage(message)
                 WhichDialogHandler.MSG_DO_SYNC -> IntentHandler.Companion.DoSync()
@@ -134,8 +131,6 @@ abstract class DialogHandlerMessage protected constructor(
         val what: Int,
     ) {
         MSG_SHOW_COLLECTION_LOADING_ERROR_DIALOG(0),
-        MSG_SHOW_COLLECTION_IMPORT_REPLACE_DIALOG(1),
-        MSG_SHOW_COLLECTION_IMPORT_ADD_DIALOG(2),
         MSG_SHOW_SYNC_ERROR_DIALOG(3),
         MSG_SHOW_DATABASE_ERROR_DIALOG(6),
         MSG_DO_SYNC(8),

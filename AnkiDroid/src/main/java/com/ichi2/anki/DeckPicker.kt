@@ -65,6 +65,7 @@ import androidx.core.view.isVisible
 import androidx.draganddrop.DropHelper
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -535,20 +536,27 @@ open class DeckPicker :
 
         lifecycleScope.launch { applyDeckPickerBackground() }
 
-        // Observe import events emitted by ImportDialog via ImportViewModel.
+        // Observe import requests emitted by ImportDialog via ImportViewModel.
         lifecycleScope.launch {
-            importViewModel.importAddFlow
-                .flowWithLifecycle(lifecycle)
-                .collectLatest { path ->
-                    importAdd(path)
-                }
-        }
-
-        lifecycleScope.launch {
-            importViewModel.importReplaceFlow
-                .flowWithLifecycle(lifecycle)
-                .collectLatest { path ->
-                    importReplace(path)
+            importViewModel.pendingImportRequest
+                .filterNotNull()
+                .flowWithLifecycle(lifecycle, Lifecycle.State.RESUMED)
+                .collectLatest { request ->
+                    runCatching {
+                        showImportDialog(request.dialogType, request.importPath)
+                    }.onFailure { exception ->
+                        if (exception is IllegalStateException) {
+                            showSimpleNotification(
+                                getString(R.string.import_title),
+                                getString(R.string.import_interrupted),
+                                Channel.GENERAL,
+                            )
+                        } else {
+                            throw exception
+                        }
+                    }.onSuccess {
+                        importViewModel.clearImportRequest()
+                    }
                 }
         }
 

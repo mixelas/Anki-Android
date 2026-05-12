@@ -26,7 +26,6 @@ import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
 import com.ichi2.anki.dialogs.ImportViewModel
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
-import com.ichi2.utils.ImportUtils
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
 import timber.log.Timber
@@ -64,16 +63,13 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_dialog_message_add, displayFileName))
                     .positiveButton(R.string.import_message_add) {
-                        // Try to handle directly for backward compatibility with activities that implement ImportDialogListener
-                        val a = activity
-                        if (a is ImportDialogListener) {
-                            a.importAdd(packagePath)
-                            a.dismissAllDialogFragments()
-                        } else {
-                            // If activity doesn't implement the interface, emit ViewModel event
-                            importViewModel.triggerImportAdd(packagePath)
-                            activity?.dismissAllDialogFragments()
-                        }
+                        importViewModel.registerImportRequest(
+                            ImportViewModel.ImportRequest(
+                                dialogType = DIALOG_IMPORT_ADD_CONFIRM,
+                                importPath = packagePath,
+                            ),
+                        )
+                        activity?.dismissAllDialogFragments()
                     }.negativeButton(R.string.dialog_cancel)
                     .create()
             }
@@ -82,16 +78,13 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_message_replace_confirm, displayFileName))
                     .positiveButton(R.string.dialog_positive_replace) {
-                        // Try to handle directly for backward compatibility with activities that implement ImportDialogListener
-                        val a = activity
-                        if (a is ImportDialogListener) {
-                            a.importReplace(packagePath)
-                            a.dismissAllDialogFragments()
-                        } else {
-                            // If activity doesn't implement the interface, emit ViewModel event
-                            importViewModel.triggerImportReplace(packagePath)
-                            activity?.dismissAllDialogFragments()
-                        }
+                        importViewModel.registerImportRequest(
+                            ImportViewModel.ImportRequest(
+                                dialogType = DIALOG_IMPORT_REPLACE_CONFIRM,
+                                importPath = packagePath,
+                            ),
+                        )
+                        activity?.dismissAllDialogFragments()
                     }.negativeButton(R.string.dialog_cancel)
                     .create()
             }
