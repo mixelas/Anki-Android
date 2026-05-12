@@ -129,6 +129,7 @@ import com.ichi2.anki.dialogs.FatalErrorDialog
 import com.ichi2.anki.dialogs.ImportDialog.ImportDialogListener
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.ApkgImportResultLauncherProvider
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.CsvImportResultLauncherProvider
+import com.ichi2.anki.dialogs.ImportViewModel
 import com.ichi2.anki.dialogs.SchedulerUpgradeDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog.Companion.newInstance
@@ -246,6 +247,7 @@ open class DeckPicker :
     CsvImportResultLauncherProvider,
     CollectionPermissionScreenLauncher {
     val viewModel: DeckPickerViewModel by viewModels()
+    private val importViewModel: ImportViewModel by viewModels()
 
     private lateinit var binding: ActivityHomescreenBinding
 
@@ -532,6 +534,23 @@ open class DeckPicker :
         deckPickerBinding.decks.adapter = deckListAdapter
 
         lifecycleScope.launch { applyDeckPickerBackground() }
+
+        // Observe import events emitted by ImportDialog via ImportViewModel.
+        lifecycleScope.launch {
+            importViewModel.importAddFlow
+                .flowWithLifecycle(lifecycle)
+                .collectLatest { path ->
+                    importAdd(path)
+                }
+        }
+
+        lifecycleScope.launch {
+            importViewModel.importReplaceFlow
+                .flowWithLifecycle(lifecycle)
+                .collectLatest { path ->
+                    importReplace(path)
+                }
+        }
 
         pullToSyncWrapper =
             deckPickerBinding.pullToSyncWrapper.apply {

@@ -20,10 +20,11 @@ import android.os.Bundle
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
+import androidx.lifecycle.ViewModelProvider
 import com.ichi2.anki.R
-import com.ichi2.anki.dialogs.DialogHandler
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
+import com.ichi2.anki.dialogs.ImportViewModel
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.utils.ImportUtils
 import com.ichi2.utils.negativeButton
@@ -44,6 +45,13 @@ class ImportDialog : AsyncDialogFragment() {
     private val packagePath: String
         get() = requireArguments().getString(IMPORT_DIALOG_PACKAGE_PATH_KEY)!!
 
+    private lateinit var importViewModel: ImportViewModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        importViewModel = ViewModelProvider(requireActivity()).get(ImportViewModel::class.java)
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
         super.onCreate(savedInstanceState)
         val dialog = AlertDialog.Builder(requireActivity())
@@ -62,9 +70,8 @@ class ImportDialog : AsyncDialogFragment() {
                             a.importAdd(packagePath)
                             a.dismissAllDialogFragments()
                         } else {
-                            // If activity doesn't implement the interface, store a persistent message
-                            // so the DeckPicker can replay it via DialogHandler
-                            DialogHandler.storeMessage(ImportUtils.CollectionImportAdd(packagePath).toMessage())
+                            // If activity doesn't implement the interface, emit ViewModel event
+                            importViewModel.triggerImportAdd(packagePath)
                             activity?.dismissAllDialogFragments()
                         }
                     }.negativeButton(R.string.dialog_cancel)
@@ -81,9 +88,8 @@ class ImportDialog : AsyncDialogFragment() {
                             a.importReplace(packagePath)
                             a.dismissAllDialogFragments()
                         } else {
-                            // If activity doesn't implement the interface, store a persistent message
-                            // so the DeckPicker can replay it via DialogHandler
-                            DialogHandler.storeMessage(ImportUtils.CollectionImportReplace(packagePath).toMessage())
+                            // If activity doesn't implement the interface, emit ViewModel event
+                            importViewModel.triggerImportReplace(packagePath)
                             activity?.dismissAllDialogFragments()
                         }
                     }.negativeButton(R.string.dialog_cancel)
