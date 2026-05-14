@@ -83,6 +83,7 @@ object SslUtil {
         return keyStore
     }
 
+    @Suppress("DirectDateInstantiation", "DirectSystemCurrentTimeMillisUsage")
     private fun generateKeystore(file: File): KeyStore {
         // Ensure BouncyCastle provider is available for certificate generation
         try {
