@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2026 mixelas <michelakisgio@gmail.com>
+ *  Copyright (c) 2026 Georgios Michelakis <michelakisgio@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free Software
@@ -16,33 +16,46 @@
 
 package com.ichi2.anki.pages
 
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x509.BasicConstraints
+import org.bouncycastle.asn1.x509.Extension
+import org.bouncycastle.asn1.x509.GeneralName
+import org.bouncycastle.asn1.x509.GeneralNames
+import org.bouncycastle.asn1.x509.KeyUsage
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.math.BigInteger
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.KeyStore
+import java.security.SecureRandom
+import java.security.Security
+import java.util.Date
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 
-/** Provides SSL/TLS support for AnkiServer HTTPS connections (Issue #15991) */
+/** Manages SSL/TLS support for HTTPS connections in AnkiServer */
 object SslUtil {
-    private const val KEYSTORE_FILENAME = "anki_keystore.bks"
+    private const val KEYSTORE_FILENAME = "anki_keystore.p12"
     private const val KEYSTORE_ALIAS = "localhost"
     private const val KEY_SIZE = 2048
 
     /**
-     * Password for local development HTTPS keystore.
-     * This is only used for local localhost connections and is not exposed to the network.
-     * For production use, consider using Android KeyStore API.
+     * Password for the keystore. Used for both loading and storing the PKCS12 keystore.
+     * This is an app-local credential and not transmitted over the network.
      */
     private const val KEYSTORE_PASSWORD = "localhost"
     private const val KEY_PASSWORD = "localhost"
 
     /**
-     * Get or create an SSLContext for HTTPS on localhost.
-     * Caches the keystore in the app's cache directory after first generation.
+     * Get or create an SSLContext for localhost HTTPS.
+     * The keystore is cached in the app cache directory after first generation.
      */
     fun getSSLContext(cacheDir: File): SSLContext {
         val keystoreFile = File(cacheDir, KEYSTORE_FILENAME)
@@ -63,7 +76,7 @@ object SslUtil {
     }
 
     private fun loadKeystore(file: File): KeyStore {
-        val keyStore = KeyStore.getInstance("BKS")
+        val keyStore = KeyStore.getInstance("PKCS12")
         FileInputStream(file).use { fis ->
             keyStore.load(fis, KEYSTORE_PASSWORD.toCharArray())
         }
@@ -71,24 +84,88 @@ object SslUtil {
     }
 
     private fun generateKeystore(file: File): KeyStore {
-        val keyStore = KeyStore.getInstance("BKS")
+        // Ensure BouncyCastle provider is available for certificate generation
+        try {
+            Security.addProvider(BouncyCastleProvider())
+        } catch (_: Exception) {
+            // provider may already be present
+        }
+
+        val keyStore = KeyStore.getInstance("PKCS12")
         keyStore.load(null, null)
 
-        // Generate a self-signed certificate for localhost
-        // For production use, consider using Android KeyStore API or pre-generated certificates
         try {
-            val keyPair = generateKeyPair()
-            // TODO: Generate and sign X.509 certificate
-            // Temporary approach: Store raw key pair until certificate generation is implemented
-            // This allows HTTPS connections but without proper certificate validation
+            // CA key pair
+            val caKeyPair = generateKeyPair()
+            val now = Date()
+            val caNotBefore = Date(now.time - 1000L * 60)
+            val caNotAfter = Date(now.time + 3650L * 24 * 60 * 60 * 1000) // 10 years
+
+            val caName = X500Name("CN=Anki Local CA")
+            val caSerial = BigInteger.valueOf(System.currentTimeMillis())
+
+            val caBuilder =
+                JcaX509v3CertificateBuilder(
+                    caName,
+                    caSerial,
+                    caNotBefore,
+                    caNotAfter,
+                    caName,
+                    caKeyPair.public,
+                )
+
+            caBuilder.addExtension(
+                Extension.basicConstraints,
+                true,
+                BasicConstraints(true),
+            )
+
+            val caSigner = JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(caKeyPair.private)
+            val caHolder = caBuilder.build(caSigner)
+            val caCert = JcaX509CertificateConverter().setProvider("BC").getCertificate(caHolder)
+
+            // Leaf key pair
+            val leafKeyPair = generateKeyPair()
+            val leafName = X500Name("CN=localhost")
+            val leafSerial = BigInteger.valueOf(System.currentTimeMillis() + 1)
+            val leafNotBefore = caNotBefore
+            val leafNotAfter = Date(now.time + 365L * 24 * 60 * 60 * 1000) // 1 year
+
+            val sanNames =
+                GeneralNames(
+                    arrayOf(
+                        GeneralName(GeneralName.dNSName, "localhost"),
+                        GeneralName(GeneralName.iPAddress, "127.0.0.1"),
+                    ),
+                )
+
+            val leafBuilder =
+                JcaX509v3CertificateBuilder(
+                    caName,
+                    leafSerial,
+                    leafNotBefore,
+                    leafNotAfter,
+                    leafName,
+                    leafKeyPair.public,
+                )
+
+            leafBuilder.addExtension(Extension.basicConstraints, false, BasicConstraints(false))
+            leafBuilder.addExtension(Extension.subjectAlternativeName, false, sanNames)
+            leafBuilder.addExtension(Extension.keyUsage, true, KeyUsage(KeyUsage.digitalSignature or KeyUsage.keyEncipherment))
+
+            val leafSigner = JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(caKeyPair.private)
+            val leafHolder = leafBuilder.build(leafSigner)
+            val leafCert = JcaX509CertificateConverter().setProvider("BC").getCertificate(leafHolder)
+
+            // Store leaf private key and certificate chain (leaf, ca)
             keyStore.setKeyEntry(
                 KEYSTORE_ALIAS,
-                keyPair.private,
+                leafKeyPair.private,
                 KEY_PASSWORD.toCharArray(),
-                arrayOfNulls(0), // Empty certificate chain for now
+                arrayOf(leafCert, caCert),
             )
         } catch (e: Exception) {
-            Timber.w(e, "Failed to generate key pair for keystore")
+            Timber.w(e, "Failed to generate certificate chain for keystore")
         }
 
         FileOutputStream(file).use { fos ->
