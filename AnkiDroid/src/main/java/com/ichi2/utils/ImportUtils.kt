@@ -25,6 +25,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.edit
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.ichi2.anki.AnkiDroidApp
@@ -38,6 +39,7 @@ import com.ichi2.anki.compat.CompatHelper
 import com.ichi2.anki.dialogs.ImportDialog
 import com.ichi2.anki.dialogs.ImportViewModel
 import com.ichi2.anki.onSelectedCsvForImport
+import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.servicelayer.DebugInfoService
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.Contract
@@ -481,14 +483,25 @@ object ImportUtils {
                     } else {
                         ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
                     }
-                (context as? FragmentActivity)?.let { activity ->
-                    val importViewModel = ViewModelProvider(activity)[ImportViewModel::class.java]
+                // Register import request or persist fallback
+                if (context is androidx.fragment.app.FragmentActivity) {
+                    val activity = context
+                    val importViewModel = androidx.lifecycle.ViewModelProvider(activity)[ImportViewModel::class.java]
                     importViewModel.registerImportRequest(
                         ImportViewModel.ImportRequest(
                             dialogType = dialogType,
                             importPath = importPath,
                         ),
                     )
+                } else {
+                    try {
+                        AnkiDroidApp.instance.sharedPrefs().edit {
+                            putString("pending_import_path", importPath)
+                            putInt("pending_import_dialog_type", dialogType.code)
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "Failed to persist pending import request")
+                    }
                 }
             }
 

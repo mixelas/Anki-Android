@@ -558,6 +558,27 @@ open class DeckPicker :
                         importViewModel.clearImportRequest()
                     }
                 }
+            // If an external intent saved a pending import request (see ImportUtils), restore it now.
+            sharedPrefs().getString("pending_import_path", null)?.let { pendingPath ->
+                val typeCode = sharedPrefs().getInt("pending_import_dialog_type", -1)
+                val dialogType =
+                    if (typeCode == com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM.code) {
+                        com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
+                    } else {
+                        com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
+                    }
+
+                importViewModel.registerImportRequest(
+                    ImportViewModel.ImportRequest(
+                        dialogType = dialogType,
+                        importPath = pendingPath,
+                    ),
+                )
+                sharedPrefs().edit {
+                    remove("pending_import_path")
+                    remove("pending_import_dialog_type")
+                }
+            }
         }
 
         pullToSyncWrapper =

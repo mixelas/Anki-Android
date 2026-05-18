@@ -16,9 +16,11 @@
 
 package com.ichi2.anki.dialogs
 
+import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
 class ImportViewModel : ViewModel() {
@@ -36,8 +38,9 @@ class ImportViewModel : ViewModel() {
         pendingImportRequestState.value = null
     }
 
+    @Parcelize
     data class ImportRequest(
         val dialogType: ImportDialog.Type,
         val importPath: String,
-    )
+    ) : Parcelable
 }
