@@ -555,7 +555,7 @@ open class DeckPicker :
                             throw exception
                         }
                     }.onSuccess {
-                        importViewModel.clearImportRequest()
+                        importViewModel.clearPendingImportRequest()
                     }
                 }
             // If an external intent saved a pending import request (see ImportUtils), restore it now.
@@ -568,7 +568,7 @@ open class DeckPicker :
                         com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
                     }
 
-                importViewModel.registerImportRequest(
+                importViewModel.setPendingImportRequest(
                     ImportViewModel.ImportRequest(
                         dialogType = dialogType,
                         importPath = pendingPath,

@@ -17,25 +17,30 @@
 package com.ichi2.anki.dialogs
 
 import android.os.Parcelable
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
-class ImportViewModel : ViewModel() {
-    private val pendingImportRequestState = MutableStateFlow<ImportRequest?>(null)
+class ImportViewModel(
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+    val pendingImportRequest: StateFlow<ImportRequest?> =
+        savedStateHandle.getStateFlow(PENDING_IMPORT_REQUEST_KEY, null)
 
-    val pendingImportRequest: StateFlow<ImportRequest?> = pendingImportRequestState
-
-    fun registerImportRequest(request: ImportRequest) {
-        Timber.d("Import dialog requested: %s", request.dialogType)
-        pendingImportRequestState.value = request
+    fun setPendingImportRequest(request: ImportRequest) {
+        Timber.d("Setting pending import request: %s", request.dialogType)
+        savedStateHandle[PENDING_IMPORT_REQUEST_KEY] = request
     }
 
-    fun clearImportRequest() {
-        Timber.d("Clearing pending import dialog request")
-        pendingImportRequestState.value = null
+    fun clearPendingImportRequest() {
+        Timber.d("Clearing pending import request")
+        savedStateHandle[PENDING_IMPORT_REQUEST_KEY] = null
+    }
+
+    companion object {
+        private const val PENDING_IMPORT_REQUEST_KEY = "pending_import_request"
     }
 
     @Parcelize

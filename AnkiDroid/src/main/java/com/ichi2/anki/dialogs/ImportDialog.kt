@@ -20,7 +20,7 @@ import android.os.Bundle
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.activityViewModels
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
@@ -44,12 +44,7 @@ class ImportDialog : AsyncDialogFragment() {
     private val packagePath: String
         get() = requireArguments().getString(IMPORT_DIALOG_PACKAGE_PATH_KEY)!!
 
-    private lateinit var importViewModel: ImportViewModel
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        importViewModel = ViewModelProvider(requireActivity()).get(ImportViewModel::class.java)
-    }
+    private val importViewModel: ImportViewModel by activityViewModels()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
         super.onCreate(savedInstanceState)
@@ -63,7 +58,7 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_dialog_message_add, displayFileName))
                     .positiveButton(R.string.import_message_add) {
-                        importViewModel.registerImportRequest(
+                        importViewModel.setPendingImportRequest(
                             ImportViewModel.ImportRequest(
                                 dialogType = DIALOG_IMPORT_ADD_CONFIRM,
                                 importPath = packagePath,
@@ -78,7 +73,7 @@ class ImportDialog : AsyncDialogFragment() {
                     .setTitle(R.string.import_title)
                     .setMessage(res().getString(R.string.import_message_replace_confirm, displayFileName))
                     .positiveButton(R.string.dialog_positive_replace) {
-                        importViewModel.registerImportRequest(
+                        importViewModel.setPendingImportRequest(
                             ImportViewModel.ImportRequest(
                                 dialogType = DIALOG_IMPORT_REPLACE_CONFIRM,
                                 importPath = packagePath,

@@ -487,7 +487,7 @@ object ImportUtils {
                 if (context is androidx.fragment.app.FragmentActivity) {
                     val activity = context
                     val importViewModel = androidx.lifecycle.ViewModelProvider(activity)[ImportViewModel::class.java]
-                    importViewModel.registerImportRequest(
+                    importViewModel.setPendingImportRequest(
                         ImportViewModel.ImportRequest(
                             dialogType = dialogType,
                             importPath = importPath,
